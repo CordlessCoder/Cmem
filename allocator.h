@@ -1,3 +1,6 @@
+#ifndef ALLOCATOR_H
+#define ALLOCATOR_H
+#pragma once
 #include <stdalign.h>
 #include <stddef.h>
 
@@ -42,3 +45,4 @@ size_t next_pow2(size_t v);
 #define TypeLayout_array(TYPE, COUNT) ((TypeLayout)\
     { .size = sizeof(TYPE) * COUNT, .align = alignof(TYPE) })
 // clang-format on
+#endif
