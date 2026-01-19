@@ -1,3 +1,6 @@
+#ifndef BUFFER_H
+#define BUFFER_H
+#pragma once
 #include "allocator.h"
 #include <stdbool.h>
 #include <stddef.h>
@@ -25,3 +28,4 @@ void ByteBuffer_reserve(AllocatorInstance allocator, ByteBuffer* self, size_t ex
 void ByteBuffer_push(AllocatorInstance allocator, ByteBuffer* self, char byte);
 void ByteBuffer_append(AllocatorInstance allocator, ByteBuffer* self, ByteSlice slice);
 bool ByteBuffer_pop(ByteBuffer* self, char* byte);
+#endif
