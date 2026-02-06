@@ -12,14 +12,15 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define NODE CAT(Node, T)
-#define LIST CAT(List, T)
+#define NODE CAT(DNode, T)
+#define LIST CAT(DList, T)
 
 typedef struct NODE NODE;
 
 struct NODE {
     T value;
     NODE* next;
+    NODE* prev;
 };
 
 
@@ -32,17 +33,19 @@ struct LIST {
     AllocatorInstance allocator;
 };
 
-#define node_new CAT(node_new, T)
-#define list_new CAT(list_new, T)
-#define list_push_back CAT(list_push_back, T)
-#define list_push_front CAT(list_push_front, T)
-#define list_pop_front CAT(list_pop_front, T)
-#define list_make_empty CAT(list_make_empty, T)
+#define node_new CAT(dnode_new, T)
+#define list_new CAT(dlist_new, T)
+#define list_push_back CAT(dlist_push_back, T)
+#define list_push_front CAT(dlist_push_front, T)
+#define list_pop_front CAT(dlist_pop_front, T)
+#define list_pop_back CAT(dlist_pop_back, T)
+#define list_make_empty CAT(dlist_make_empty, T)
 
 static NODE* node_new(AllocatorInstance allocator, const T value) {
     NODE* ptr = Allocator_alloc(allocator, TypeLayout_for_type(NODE));
     ptr->value = value;
     ptr->next = NULL;
+    ptr->prev = NULL;
     return ptr;
 }
 
@@ -64,6 +67,7 @@ static void list_push_back(LIST* self, const T value) {
         return;
     }
     self->tail->next = node;
+    node->prev = self->tail;
     self->tail = node;
 }
 
@@ -76,6 +80,7 @@ static void list_push_front(LIST* self, T value) {
         return;
     }
     node->next = self->head;
+    self->head->prev = node;
     self->head = node;
 }
 
@@ -88,9 +93,28 @@ static bool list_pop_front(LIST* self, T* const out) {
     self->head = old_head->next;
     if (self->head == NULL) {
         self->tail = NULL;
+    } else {
+        self->head->prev = NULL;
     }
     *out = old_head->value;
     Allocator_free(self->allocator, TypeLayout_for_type(NODE), old_head);
+    return true;
+}
+
+static bool list_pop_back(LIST* self, T* const out) {
+    if (self->tail == NULL) {
+        return false;
+    }
+    self->len--;
+    NODE* old_tail = self->tail;
+    self->tail = old_tail->prev;
+    if (self->tail == NULL) {
+        self->head = NULL;
+    } else {
+        self->tail->next = NULL;
+    }
+    *out = old_tail->value;
+    Allocator_free(self->allocator, TypeLayout_for_type(NODE), old_tail);
     return true;
 }
 
@@ -106,5 +130,6 @@ static void list_make_empty(LIST* list) {
 #undef list_push_back
 #undef list_push_front
 #undef list_pop_front
+#undef list_pop_back
 #undef list_make_empty
 #endif

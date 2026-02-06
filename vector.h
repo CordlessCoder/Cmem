@@ -36,6 +36,7 @@ struct VECTOR {
 #define vector_reserve CAT(vector_reserve, T)
 #define vector_get CAT(vector_get, T)
 #define vector_push_back CAT(vector_push_back, T)
+#define vector_append_back CAT(vector_append_back, T)
 #define vector_insert CAT(vector_insert, T)
 #define vector_pop_back CAT(vector_pop_back, T)
 #define vector_remove CAT(vector_remove, T)
@@ -53,7 +54,9 @@ static VECTOR vector_new(AllocatorInstance allocator) {
 }
 
 static void vector_free(VECTOR* self) {
-    Allocator_free(self->allocator, T_TL(self->cap), self->ptr);
+    if (self->cap) {
+        Allocator_free(self->allocator, T_TL(self->cap), self->ptr);
+    }
     self->cap = 0;
     self->len = 0;
     self->ptr = NULL;
@@ -96,6 +99,12 @@ static T* vector_get(VECTOR* self, const size_t idx) {
 static void vector_push_back(VECTOR* self, const T value) {
     vector_reserve(self, 1);
     self->ptr[self->len++] = value;
+}
+
+static void vector_append_back(VECTOR* self, const T* ptr, size_t len) {
+    vector_reserve(self, len);
+    memcpy(&self->ptr[self->len], ptr, len * sizeof(T));
+    self->len += len;
 }
 
 static bool vector_pop_back(VECTOR* self, T* const out) {

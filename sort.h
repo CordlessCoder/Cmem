@@ -3,6 +3,7 @@
 #error you need to define T before including this header
 #else
 
+
 #ifndef CAT
 #define CAT_(A, B) A##_##B
 #define CAT(A, B) CAT_(A, B)
