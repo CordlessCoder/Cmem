@@ -14,6 +14,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #define KV CAT(K, V)
 
@@ -87,7 +88,9 @@ static void table_free(TABLE* self) {
 static void table_reserve(TABLE* self, size_t extra);
 
 // Using c_1 = c_2 = 0.5
+#ifndef QUADRATIC_PROBE
 #define QUADRATIC_PROBE(HASH, I, SIZE) (HASH + (I + I * I) / 2) % SIZE
+#endif
 
 static void table_insert(TABLE* self, K key, V value) {
     table_reserve(self, 1);
@@ -134,20 +137,33 @@ static bool table_remove(TABLE* self, K key, V* out) {
     uint64_t (*hash_fn)(K) = CAT(table_hash, K);
     bool (*eq_fn)(K, K) = CAT(table_eq, K);
     uint64_t hash = hash_fn(key);
+    NODE* to_be_removed = NULL;
+    NODE* end_of_probe_chain = NULL;
+    size_t probe = 0;
     for (size_t probe = 0; probe < self->cap; probe++) {
         size_t idx = QUADRATIC_PROBE(hash, probe, self->cap);
-        if (!self->ptr[idx].present) {
-            // Not present
+        NODE* probed_node = &self->ptr[idx];
+        if (!probed_node->present) {
+            // End of probe chain
             break;
         }
-        if (eq_fn(key, self->ptr[idx].key)) {
-            *out = self->ptr[idx].value;
-            self->ptr[idx].present = false;
-            self->len--;
-            return true;
+        end_of_probe_chain = probed_node;
+        if (eq_fn(key, probed_node->key)) {
+            to_be_removed = probed_node;
         }
     }
-    return false;
+    if (to_be_removed == NULL) {
+        return false;
+    }
+    *out = to_be_removed->value;
+    // Swap end of probe chain in place of the removed node
+    if (to_be_removed != end_of_probe_chain) {
+        to_be_removed->value = end_of_probe_chain->value;
+        to_be_removed->key = end_of_probe_chain->key;
+    }
+    end_of_probe_chain->present = false;
+    self->len--;
+    return true;
 }
 
 static bool table_iter_next(ITER* iter, NODE** out);
